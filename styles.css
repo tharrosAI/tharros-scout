@@ -88,6 +88,7 @@
     overflow: hidden;
     padding: 32px;
     gap: 32px;
+    min-height: calc(100vh - 72px);
   }
   /* SIDEBAR */
   .sidebar {
@@ -98,6 +99,8 @@
     flex-direction: column;
     overflow: hidden;
     padding-right: 32px;
+    max-height: 100%;
+  }
   }
   .sidebar-header {
     padding: 24px 0 16px;
@@ -251,6 +254,7 @@
     flex-direction: column;
     padding-left: 32px;
     gap: 32px;
+    max-height: 100%;
   }
   .main::-webkit-scrollbar { width: 4px; }
   .main::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
@@ -346,6 +350,24 @@
     border-color: var(--accent);
     color: var(--accent);
   }
+  .btn-refresh.syncing {
+    background: rgba(0, 245, 255, 0.3);
+    border-color: transparent;
+    position: relative;
+  }
+  .btn-refresh.syncing::after {
+    content: ' Syncing...';
+    font-size: 11px;
+    margin-left: 4px;
+  }
+  .btn-refresh.synced {
+    background: var(--green);
+    color: #0a0a0f;
+  }
+  .btn-refresh.failed {
+    background: rgba(224,82,82,0.25);
+    color: #fff;
+  }
   .save-notes-btn.saved-note {
     background: rgba(76, 175, 125, 0.2);
     border-color: rgba(76, 175, 125, 0.4);
@@ -356,6 +378,15 @@
     border-color: var(--red-dim);
   }
   .btn-danger:hover { background: var(--red-dim); border-color: var(--red); }
+  .btn-ghost {
+    background: transparent;
+    border-color: rgba(255,255,255,0.2);
+    color: var(--text3);
+  }
+  .btn-ghost:hover {
+    border-color: var(--accent);
+    color: var(--text);
+  }
   /* PIPELINE */
   .pipeline {
     margin-bottom: 32px;
@@ -773,15 +804,28 @@
   }
   .ov-grid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
     gap: 10px;
     margin-bottom: 28px;
   }
-  .ov-card {
+  .ov-card,
+  .ov-card-btn {
     background: var(--bg2);
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 16px;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border 200ms ease, transform 200ms ease;
+  }
+  .ov-card-btn {
+    font: inherit;
+  }
+  .ov-card-btn:hover {
+    transform: translateY(-2px);
+    border-color: rgba(0,245,255,0.4);
+  }
   }
   .ov-card-num {
     font-family: 'Bebas Neue', sans-serif;

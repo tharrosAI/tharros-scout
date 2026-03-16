@@ -4,6 +4,7 @@ const STAGES = [
   { name: 'Demo Successful', short: 'Demo Done', code: 'S3' },
   { name: 'Activation', short: 'Activation', code: 'S4' },
   { name: 'Payment + Onboarding', short: 'Payment', code: 'S5' },
+  { name: 'Archive', short: 'Archive', code: 'ARCH' },
 ];
 
 const BADGE_CLASS = ['badge-s1','badge-s2','badge-s3','badge-s4','badge-s5'];
@@ -77,7 +78,10 @@ const STAGE_SEQUENCES = [
   ['seen_main', 'seen_followup', 'seen_bump', 'seen_final'],
   ['act_main', 'act_followup', 'act_bump', 'act_final'],
   ['payment'],
+  [],
 ];
+
+const ARCHIVE_STAGE = STAGES.length - 1;
 
 const WEBHOOK_URL = 'https://tharros.app.n8n.cloud/webhook/e196fe46-4e43-474d-844a-b0f7cce8eab3';
 const FETCH_WEBHOOK_URL = 'https://tharros.app.n8n.cloud/webhook/2e6968bb-c9a1-4150-9516-e845842b37cc';
@@ -112,27 +116,56 @@ function save() {
   });
 }
 
-function syncLeadUpdate(lead) {
+function updateLead(lead) {
   if (!lead || !lead.name) return Promise.resolve();
-  const sentMessagesPayload = JSON.stringify(Array.isArray(lead.sentMessages) ? lead.sentMessages : []);
+  setSyncState('start');
   const payload = {
+    row_number: lead.rowNumber || lead.row_number || lead.row || '',
     'Business Name': lead.name,
+    Phone: lead.phone || '',
+    'Contact Name': lead.contact || '',
     Website: lead.website || '',
     City: lead.city || '',
     State: lead.state || '',
     Email: lead.email || '',
     Notes: lead.notes || '',
-    'Sent Messages': sentMessagesPayload,
+    Stage: lead.stage,
+    'Sent Messages': JSON.stringify(Array.isArray(lead.sentMessages) ? lead.sentMessages : []),
   };
   return fetch(UPDATE_WEBHOOK_URL, {
     method: 'POST',
     mode: 'cors',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
-  }).then(res => {
-    if (!res.ok) throw new Error('Lead sync failed');
-    return res;
-  });
+  })
+    .then(res => {
+      if (!res.ok) throw new Error('Lead update failed');
+      setSyncState('success');
+      return res;
+    })
+    .catch(err => {
+      setSyncState('failure');
+      throw err;
+    });
+}
+
+function setSyncState(state) {
+  const btn = document.querySelector('.btn-refresh');
+  if (!btn) return;
+  btn.classList.remove('syncing', 'synced', 'failed');
+  if (state === 'start') {
+    btn.classList.add('syncing');
+    return;
+  }
+  if (state === 'success') {
+    btn.classList.add('synced');
+    setTimeout(() => btn.classList.remove('synced'), 900);
+    return;
+  }
+  if (state === 'failure') {
+    btn.classList.add('failed');
+    setTimeout(() => btn.classList.remove('failed'), 900);
+  }
 }
 
 function fetchLeads() {
@@ -172,6 +205,7 @@ function normalizeLeadRow(row) {
   const sentMessagesRaw = resolveField(row, 'Sent Messages');
   const stageValue = resolveField(row, 'Stage');
   const lastMessageRaw = resolveField(row, 'lastMessageAt');
+  const rowNumber = resolveField(row, 'row_number') || resolveField(row, 'rowNumber') || resolveField(row, 'row');
   return {
     id: resolveField(row, 'id') || genId(),
     name: businessName || contactName || 'Untitled Lead',
@@ -187,6 +221,7 @@ function normalizeLeadRow(row) {
     email: resolveField(row, 'Email') || '',
     createdAt: parseTimestamp(resolveField(row, 'time')) || now(),
     lastMessageAt: parseTimestamp(lastMessageRaw),
+    rowNumber: Number(rowNumber) || null,
   };
 }
 
@@ -304,7 +339,11 @@ function renderLeadList() {
   const search = document.getElementById('search-input').value.toLowerCase();
   let filtered = leads.filter(l => {
     if (search && !l.name.toLowerCase().includes(search) && !(l.phone || '').includes(search)) return false;
-    if (currentFilter === 'action') return isActionDue(l) && l.stage < 5;
+    if (currentFilter === 'archived') {
+      return l.stage === ARCHIVE_STAGE;
+    }
+    if (l.stage === ARCHIVE_STAGE) return false;
+    if (currentFilter === 'action') return isActionDue(l) && l.stage < ARCHIVE_STAGE;
     if (currentFilter !== 'all' && currentFilter !== 'action') {
       return l.stage === parseInt(currentFilter, 10);
     }
@@ -319,7 +358,7 @@ function renderLeadList() {
   });
 
   document.getElementById('hdr-total').textContent = leads.length;
-  const needAction = leads.filter(l => isActionDue(l) && l.stage < 5).length;
+  const needAction = leads.filter(l => isActionDue(l) && l.stage < ARCHIVE_STAGE).length;
   document.getElementById('hdr-action').textContent = needAction;
 
   if (!filtered.length) {
@@ -329,7 +368,7 @@ function renderLeadList() {
 
   list.innerHTML = filtered.map((lead,i) => {
     const active = lead.id === currentLeadId;
-    const action = isActionDue(lead) && lead.stage < 5;
+    const action = isActionDue(lead) && lead.stage < ARCHIVE_STAGE;
     const bc = BADGE_CLASS[lead.stage] || 'badge-s1';
     return `
       <div class="lead-item ${active?'active':''}" onclick="selectLead('${lead.id}')">
@@ -445,10 +484,10 @@ function renderDetail() {
     }).join('');
   }
 
-  const advanceHTML = lead.stage < STAGES.length ? `
+  const advanceHTML = lead.stage < ARCHIVE_STAGE ? `
     <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <span style="font-size:11px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;font-weight:600">Advance to:</span>
-      ${STAGES.map((s,i) => i > lead.stage ? `<button class="stage-btn" onclick="moveToStage(${i})">${s.name} →</button>` : '').filter(Boolean).join('')}
+      ${STAGES.map((s,i) => i > lead.stage && i < ARCHIVE_STAGE ? `<button class="stage-btn" onclick="moveToStage(${i})">${s.name} →</button>` : '').filter(Boolean).join('')}
     </div>
   ` : '';
 
@@ -481,6 +520,7 @@ function renderDetail() {
         </div>
         <div class="detail-actions">
           <span style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">Added ${fmtAbsTime(lead.createdAt)}</span>
+          ${lead.stage !== ARCHIVE_STAGE ? `<button class="btn btn-ghost" onclick="archiveLead('${lead.id}')">Archive</button>` : ''}
           <button class="btn btn-danger" onclick="deleteLead('${lead.id}')">Delete</button>
         </div>
       </div>
@@ -508,7 +548,7 @@ function markSent(leadId, msgKey) {
     lead.history.push({ code: msg.code, label: `${msg.type==='call'?'Called':'Texted'}: ${msg.title}`, ts: now() });
     lead.lastMessageAt = now();
     save();
-    syncLeadUpdate(lead).catch(err => {
+    updateLead(lead).catch(err => {
       console.error('markSent sync error', err);
       showToast('Could not sync sent message', 'error');
     });
@@ -526,6 +566,10 @@ function moveToStage(stageIdx) {
   if (!lead.history) lead.history = [];
   lead.history.push({ code: `S${stageIdx+1}`, label: `Advanced to: ${STAGES[stageIdx].name}`, ts: now() });
   save();
+  updateLead(lead).catch(err => {
+    console.error('moveToStage sync error', err);
+    showToast('Could not sync stage change', 'error');
+  });
   renderLeadList();
   renderDetail();
   showToast(`Moved to ${STAGES[stageIdx].name}`);
@@ -571,6 +615,25 @@ function deleteLead(id) {
     });
 }
 
+function archiveLead(id) {
+  const lead = leads.find(l => l.id === id);
+  if (!lead || lead.stage === ARCHIVE_STAGE) return;
+  lead.stage = ARCHIVE_STAGE;
+  if (!lead.history) lead.history = [];
+  lead.history.push({ code: 'ARCH', label: 'Lead archived', ts: now() });
+  save();
+  updateLead(lead)
+    .then(() => {
+      showToast('Lead archived');
+    })
+    .catch(err => {
+      console.error('archiveLead error', err);
+      showToast('Could not sync archive', 'error');
+    });
+  renderLeadList();
+  renderDetail();
+}
+
 function saveLeadNotes(id, btn) {
   const textarea = document.getElementById('lead-notes-input');
   if (!textarea) return;
@@ -578,7 +641,7 @@ function saveLeadNotes(id, btn) {
   if (!lead) return;
   const notes = textarea.value.trim();
   lead.notes = notes;
-  syncLeadUpdate(lead)
+  updateLead(lead)
     .then(() => {
       save();
       if (btn) {
@@ -713,10 +776,10 @@ function getOverviewBuckets(events) {
 
 function renderOverview() {
   const ov = document.getElementById('overview-area');
-  const colors = ['var(--accent)','var(--accent-soft)','var(--blue)','var(--green)','var(--accent-soft)'];
+  const colors = ['var(--accent)','var(--accent-soft)','var(--blue)','var(--green)','var(--accent-soft)','var(--text3)'];
   const counts = STAGES.map((_,i) => leads.filter(l => l.stage === i).length);
   const actionItems = leads
-    .filter(l => isActionDue(l) && l.stage < 5)
+    .filter(l => isActionDue(l) && l.stage < ARCHIVE_STAGE)
     .sort((a,b) => (a.lastMessageAt||a.createdAt) - (b.lastMessageAt||b.createdAt));
 
   const historyEvents = collectHistoryEvents();
@@ -787,12 +850,16 @@ function renderOverview() {
     <div class="overview">
       <div class="ov-title">PIPELINE OVERVIEW</div>
       <div class="ov-grid">
-        ${STAGES.map((s,i) => `
-          <div class="ov-card">
-            <div class="ov-card-num" style="color:${colors[i]}">${counts[i]}</div>
-            <div class="ov-card-label">${s.short}</div>
-          </div>
-        `).join('')}
+        ${STAGES.map((s,i) => {
+          const targetFilter = i === ARCHIVE_STAGE ? 'archived' : `${i}`;
+          const extraClass = i === ARCHIVE_STAGE ? 'archive-card' : '';
+          return `
+            <button type="button" class="ov-card ov-card-btn ${extraClass}" onclick="setFilter('${targetFilter}')">
+              <div class="ov-card-num" style="color:${colors[i]}">${counts[i]}</div>
+              <div class="ov-card-label">${s.short}</div>
+            </button>
+          `;
+        }).join('')}
       </div>
       <div class="section-label">Action Queue <span style="color:var(--accent);font-style:normal">${actionItems.length} needed</span></div>
       ${actionItems.length ? `
