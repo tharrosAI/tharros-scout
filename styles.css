@@ -1037,3 +1037,59 @@
     justify-content: flex-end;
     gap: 8px;
   }
+
+@media (max-width: 768px) {
+  .app {
+    flex-direction: column;
+    padding: 16px;
+  }
+  .sidebar {
+    width: 100%;
+    min-width: unset;
+    padding-right: 0;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    order: -1;
+  }
+  .sidebar-header {
+    padding-bottom: 8px;
+  }
+  .main {
+    padding-left: 0;
+    gap: 20px;
+  }
+  .lead-detail,
+  .overview,
+  .script-dashboard {
+    padding: 24px;
+  }
+  .stage-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .stage-actions .stage-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .btn,
+  .stage-btn,
+  .add-lead-btn {
+    min-height: 48px;
+    font-size: 14px;
+    padding: 12px 16px;
+  }
+  .next-ribbon {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .pipeline {
+    width: 100%;
+  }
+  .notes-area textarea {
+    min-height: 140px;
+  }
+  .modal {
+    width: 95vw;
+    max-width: 95vw;
+  }
+}
