@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tharros Scout</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #111118;
+    --bg3: #18181f;
+    --bg4: #1e1e28;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --gold: #c9a84c;
+    --gold2: #e8c96d;
+    --gold-dim: rgba(201,168,76,0.12);
+    --gold-dim2: rgba(201,168,76,0.2);
+    --text: #f0ede8;
+    --text2: #9a9590;
+    --text3: #5a5650;
+    --green: #4caf7d;
+    --green-dim: rgba(76,175,125,0.12);
+    --red: #e05252;
+    --red-dim: rgba(224,82,82,0.1);
+    --blue: #5b9cf6;
+    --blue-dim: rgba(91,156,246,0.1);
+    --stage1: #c9a84c;
+    --stage2: #a67dd4;
+    --stage3: #5b9cf6;
+    --stage4: #4caf7d;
+    --stage5: #e8c96d;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    height: 64px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    letter-spacing: 3px;
+    color: var(--gold);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-mark {
+    width: 28px; height: 28px;
+    border: 2px solid var(--gold);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    color: var(--gold);
+  }
+  .header-right {
+    display: flex; align-items: center; gap: 16px;
+  }
+  .stat-pill {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 12px;
+    color: var(--text2);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .stat-pill strong { color: var(--text); font-weight: 600; }
+  /* MAIN LAYOUT */
+  .app {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    height: calc(100vh - 64px);
+  }
+  /* SIDEBAR */
+  .sidebar {
+    width: 340px;
+    min-width: 340px;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .sidebar-header {
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .sidebar-title {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--text3);
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .add-lead-btn {
+    background: var(--gold);
+    color: #0a0a0f;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    width: 100%;
+    transition: background 0.15s;
+    letter-spacing: 0.3px;
+  }
+  .add-lead-btn:hover { background: var(--gold2); }
+  .search-box {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    width: 100%;
+    outline: none;
+  }
+  .search-box::placeholder { color: var(--text3); }
+  .search-box:focus { border-color: var(--border2); }
+  /* FILTER TABS */
+  .filter-tabs {
+    display: flex;
+    padding: 10px 20px 0;
+    gap: 4px;
+    overflow-x: auto;
+  }
+  .filter-tab {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text3);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .filter-tab.active, .filter-tab:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: var(--gold-dim);
+  }
+  /* LEAD LIST */
+  .lead-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+  }
+  .lead-list::-webkit-scrollbar { width: 4px; }
+  .lead-list::-webkit-scrollbar-track { background: transparent; }
+  .lead-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  .lead-item {
+    padding: 12px 20px;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .lead-item:hover { background: var(--bg3); }
+  .lead-item.active {
+    background: var(--bg3);
+    border-left-color: var(--gold);
+  }
+  .lead-item-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .lead-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .lead-time {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: 'DM Mono', monospace;
+  }
+  .lead-phone {
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 6px;
+    font-family: 'DM Mono', monospace;
+  }
+  .lead-stage-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    text-transform: uppercase;
+  }
+  .lead-item-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 0 20px;
+  }
+  /* PRIORITY DOT */
+  .action-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--gold);
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    animation: pulse 2s ease infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(201,168,76,0.4); }
+    50% { opacity: 0.8; box-shadow: 0 0 0 6px rgba(201,168,76,0); }
+  }
+  /* MAIN CONTENT */
+  .main {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  .main::-webkit-scrollbar { width: 4px; }
+  .main::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  /* EMPTY STATE */
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    color: var(--text3);
+  }
+  .empty-icon {
+    width: 56px; height: 56px;
+    border: 2px solid var(--border2);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+  }
+  /* LEAD DETAIL */
+  .lead-detail {
+    padding: 32px 36px;
+    max-width: 820px;
+  }
+  .detail-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 28px;
+  }
+  .detail-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 42px;
+    letter-spacing: 2px;
+    color: var(--text);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .detail-phone {
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    color: var(--text2);
+  }
+  .detail-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .btn {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 8px 14px;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.2px;
+  }
+  .btn:hover { background: var(--bg4); border-color: var(--text3); }
+  .btn-danger {
+    color: var(--red);
+    border-color: var(--red-dim);
+  }
+  .btn-danger:hover { background: var(--red-dim); border-color: var(--red); }
+  /* PIPELINE */
+  .pipeline {
+    margin-bottom: 32px;
+  }
+  .pipeline-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text3);
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .pipeline-track {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    position: relative;
+  }
+  .pipeline-step {
+    flex: 1;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+  .pipeline-step-node {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 2px solid var(--border2);
+    background: var(--bg2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text3);
+    position: relative;
+    z-index: 2;
+    transition: all 0.2s;
+    font-family: 'DM Mono', monospace;
+  }
+  .pipeline-step.done .pipeline-step-node {
+    background: var(--green-dim);
+    border-color: var(--green);
+    color: var(--green);
+  }
+  .pipeline-step.current .pipeline-step-node {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: var(--gold-dim);
+    box-shadow: 0 0 16px rgba(201,168,76,0.2);
+  }
+  .pipeline-step-label {
+    font-size: 10px;
+    color: var(--text3);
+    text-align: center;
+    line-height: 1.3;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+  }
+  .pipeline-step.current .pipeline-step-label { color: var(--gold); }
+  .pipeline-step.done .pipeline-step-label { color: var(--green); }
+  .pipeline-connector {
+    flex: 0 0 32px;
+    height: 2px;
+    background: var(--border);
+    margin-bottom: 22px;
+    position: relative;
+    z-index: 1;
+  }
+  .pipeline-connector.done { background: var(--green); opacity: 0.4; }
+  /* ACTION CARD */
+  .action-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .action-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px; height: 100%;
+    background: var(--gold);
+  }
+  .action-card-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--gold);
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .action-card-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .action-card-timing {
+    font-size: 12px;
+    color: var(--text3);
+    margin-bottom: 16px;
+    display: flex; align-items: center; gap: 6px;
+    font-family: 'DM Mono', monospace;
+  }
+  .timing-badge {
+    background: var(--bg4);
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-size: 11px;
+    color: var(--gold);
+  }
+  /* MESSAGE BOX */
+  .message-box {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    font-size: 13.5px;
+    line-height: 1.75;
+    color: var(--text);
+    white-space: pre-wrap;
+    font-family: 'DM Sans', sans-serif;
+    margin-bottom: 14px;
+    position: relative;
+  }
+  .message-box .placeholder { color: var(--gold); font-style: italic; }
+  .copy-btn {
+    position: absolute;
+    top: 10px; right: 10px;
+    background: var(--bg4);
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .copy-btn:hover { background: var(--gold-dim); color: var(--gold); border-color: var(--gold); }
+  .copy-btn.copied { color: var(--green); border-color: var(--green); background: var(--green-dim); }
+  /* STAGE ACTIONS ROW */
+  .stage-actions {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px;
+  }
+  .stage-btn {
+    background: var(--bg4);
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 7px 14px;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .stage-btn:hover { background: var(--gold-dim); color: var(--gold); border-color: var(--gold); }
+  .stage-btn.advance {
+    background: var(--gold);
+    color: #0a0a0f;
+    border-color: var(--gold);
+    font-weight: 600;
+  }
+  .stage-btn.advance:hover { background: var(--gold2); }
+  /* MESSAGE HISTORY */
+  .history-section {
+    margin-top: 28px;
+  }
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text3);
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .history-list { display: flex; flex-direction: column; gap: 8px; }
+  .history-item {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .history-code {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+    background: var(--bg4);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    min-width: 48px;
+    text-align: center;
+    margin-top: 1px;
+  }
+  .history-meta { flex: 1; }
+  .history-name { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+  .history-time { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; }
+  .history-status {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 200;
+    display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(4px);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 14px;
+    padding: 28px 28px 24px;
+    width: 420px;
+    transform: translateY(16px);
+    transition: transform 0.2s;
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 2px;
+    color: var(--text);
+    margin-bottom: 20px;
+  }
+  .modal-field { margin-bottom: 14px; }
+  .modal-field label {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: var(--text3);
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .modal-field input, .modal-field select {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 7px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    width: 100%;
+    outline: none;
+  }
+  .modal-field input:focus, .modal-field select:focus {
+    border-color: var(--gold);
+  }
+  .modal-field select { appearance: none; }
+  .modal-actions { display: flex; gap: 8px; margin-top: 20px; justify-content: flex-end; }
+  /* CALL SCRIPT CARD */
+  .call-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+  }
+  .call-card-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--blue);
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .script-line {
+    font-size: 13.5px;
+    color: var(--text);
+    line-height: 1.7;
+    margin-bottom: 8px;
+  }
+  .script-line .cue {
+    font-size: 11px;
+    color: var(--text3);
+    font-style: italic;
+    display: block;
+    margin-top: 2px;
+  }
+  /* NEXT UP RIBBON */
+  .next-ribbon {
+    background: linear-gradient(135deg, var(--gold-dim), transparent);
+    border: 1px solid var(--gold-dim2);
+    border-radius: 10px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .next-icon {
+    width: 36px; height: 36px;
+    background: var(--gold-dim2);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .next-text { flex: 1; }
+  .next-label { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); font-weight: 600; margin-bottom: 2px; }
+  .next-desc { font-size: 13px; color: var(--text); }
+  /* BADGE COLORS */
+  .badge-s1 { background: rgba(201,168,76,0.15); color: var(--gold); }
+  .badge-s2 { background: rgba(166,125,212,0.15); color: #a67dd4; }
+  .badge-s3 { background: rgba(91,156,246,0.15); color: var(--blue); }
+  .badge-s4 { background: rgba(76,175,125,0.15); color: var(--green); }
+  .badge-s5 { background: rgba(232,201,109,0.2); color: var(--gold2); }
+  .no-action { color: var(--green); background: var(--green-dim); }
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    background: var(--bg3);
+    border: 1px solid var(--green);
+    color: var(--green);
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 999;
+    transform: translateY(60px);
+    opacity: 0;
+    transition: all 0.3s;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  /* OVERVIEW */
+  .overview {
+    padding: 32px 36px;
+  }
+  .ov-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 2px;
+    color: var(--text);
+    margin-bottom: 24px;
+  }
+  .ov-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+  .ov-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .ov-card-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 1px;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .ov-card-label {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--text3);
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .action-queue { }
+  .queue-item {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: 6px;
+  }
+  .queue-item:hover { border-color: var(--gold-dim2); background: var(--bg3); }
+  .queue-urgency {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .urg-now { background: var(--gold); box-shadow: 0 0 8px rgba(201,168,76,0.5); }
+  .urg-soon { background: var(--blue); }
+  .urg-later { background: var(--text3); }
+  .queue-info { flex: 1; }
+  .queue-name { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+  .queue-action { font-size: 12px; color: var(--text2); }
+  .queue-time { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">T</div>
+    THARROS SCOUT
+  </div>
+  <div class="header-right">
+    <div class="stat-pill" id="stat-total"><strong id="hdr-total">0</strong> Leads</div>
+    <div class="stat-pill" id="stat-action"><strong id="hdr-action">0</strong> Need Action</div>
+    <button class="btn" onclick="showOverview()">Overview</button>
+    <button class="add-lead-btn" style="width:auto;padding:8px 18px" onclick="openModal()">+ New Lead</button>
+  </div>
+</header>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-title">Pipeline</span>
+      <input class="search-box" type="text" placeholder="Search leads..." id="search-input" oninput="filterLeads()">
+      <div class="filter-tabs" id="filter-tabs">
+        <button class="filter-tab active" data-filter="all" onclick="setFilter('all',this)">All</button>
+        <button class="filter-tab" data-filter="action" onclick="setFilter('action',this)">Action Needed</button>
+        <button class="filter-tab" data-filter="0" onclick="setFilter('0',this)">1st Contact</button>
+        <button class="filter-tab" data-filter="1" onclick="setFilter('1',this)">Demo</button>
+        <button class="filter-tab" data-filter="2" onclick="setFilter('2',this)">Demo Done</button>
+        <button class="filter-tab" data-filter="3" onclick="setFilter('3',this)">Activation</button>
+        <button class="filter-tab" data-filter="4" onclick="setFilter('4',this)">Payment</button>
+      </div>
+    </div>
+    <div class="lead-list" id="lead-list"></div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main" id="main-area">
+    <div class="empty-state" id="empty-state">
+      <div class="empty-icon">◎</div>
+      <div style="font-size:15px;font-weight:500">No lead selected</div>
+      <div style="font-size:13px;color:var(--text3)">Select a lead or add a new one</div>
+      <button class="add-lead-btn" style="width:180px;margin-top:8px" onclick="openModal()">+ Add First Lead</button>
+    </div>
+    <div id="lead-detail" style="display:none"></div>
+    <div id="overview-area" style="display:none"></div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-title">NEW LEAD</div>
+    <div class="modal-field">
+      <label>Business Name</label>
+      <input type="text" id="inp-name" placeholder="e.g. Alpine Movers" />
+    </div>
+    <div class="modal-field">
+      <label>Phone Number</label>
+      <input type="text" id="inp-phone" placeholder="(555) 555-5555" />
+    </div>
+    <div class="modal-field">
+      <label>Contact Name (optional)</label>
+      <input type="text" id="inp-contact" placeholder="e.g. John" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="add-lead-btn" style="width:auto;padding:9px 22px" onclick="addLead()">Add Lead</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STAGES = [
+  { name: '1st Contact', short: '1st Contact', code: 'S1' },
+  { name: 'Demo Permission', short: 'Demo', code: 'S2' },
+  { name: 'Demo Successful', short: 'Demo Done', code: 'S3' },
+  { name: 'Activation', short: 'Activation', code: 'S4' },
+  { name: 'Payment + Onboarding', short: 'Payment', code: 'S5' },
+];
+
+const BADGE_CLASS = ['badge-s1','badge-s2','badge-s3','badge-s4','badge-s5'];
+
+const MESSAGES = {
+  // Stage 0: 1st Contact
+  call_intro: {
+    code:'001', type:'call', title:'Intro Pitch Call', stage:0,
+    content: `Hey — quick question.\n\nWhen someone calls your moving company after hours or when you're out on a job, what usually happens?\n\n[let them answer]\n\nGot it.\n\nThe reason I'm calling is we built a simple AI call assistant that answers those missed moving calls and books quote requests automatically. It basically acts like a 24/7 receptionist for moving companies.\n\n[pause]\n\nWould it be alright if I text you a demo number? Takes about 20 seconds to try.\n\n[If yes:] Cool — I'll text it over right now.`
+  },
+  call_voicemail: {
+    code:'002', type:'call', title:'Voicemail Script', stage:0,
+    content: `Hey [Contact], this is [Your Name].\n\nQuick reason for the call — we built an AI call assistant that answers missed calls for moving companies and captures quote requests automatically.\n\nI'll text you a demo number so you can try it in about 20 seconds.\n\nTalk soon.\n\n[→ Send Demo Text immediately after]`
+  },
+  // Stage 1: Demo Permission
+  demo_text: {
+    code:'0100', type:'text', title:'Demo Text', stage:1, timing:'Send immediately after call',
+    content: `Hey [Contact] — this is the demo we talked about.\n\nCall this number and pretend you need a moving quote.\n\n(828) 623-1806\n\nIt will answer like a receptionist and ask about the move.\n\nCurious what you think.`
+  },
+  demo_followup: {
+    code:'0201', type:'text', title:'Follow Up', stage:1, timing:'4 hours later',
+    content: `Hey [Contact] — did you get a chance to try the demo number yet?\n\nMost moving companies test it by saying something like:\n\n"I need a quote for a move next week."\n\nCurious what you think.`
+  },
+  demo_bump: {
+    code:'0202', type:'text', title:'Bump', stage:1, timing:'Next day',
+    content: `Quick bump on this — the demo number is still live if you want to try it.\n\n(828) 623-1806\n\nTakes about 20 seconds.`
+  },
+  demo_final: {
+    code:'0203', type:'text', title:'Final', stage:1, timing:'3 days later',
+    content: `Last message on this — totally fine if now isn't the right time.\n\nBut if you're curious how it works for moving companies, the demo is still here:\n\n(828) 623-1806\n\nHappy to show how companies are using it to catch missed quote calls.`
+  },
+  // Stage 2: Demo Successful
+  seen_main: {
+    code:'0300', type:'text', title:'Demo Seen — Main Message', stage:2, timing:'Send when they respond positively to demo',
+    content: `Glad you tried it.\n\nThe main thing moving companies use it for is catching missed calls while crews are on jobs or after hours.\n\nIt collects the move details and sends you the lead instantly.\n\nIf you'd like I can show you how it would work specifically for your company.`
+  },
+  seen_followup: {
+    code:'0301', type:'text', title:'Follow Up', stage:2, timing:'24 hours',
+    content: `Quick question — roughly how many calls do you think you miss in a typical week while crews are out on jobs?\n\nJust trying to see if this would actually help you.`
+  },
+  seen_bump: {
+    code:'0302', type:'text', title:'Bump', stage:2, timing:'2 days',
+    content: `Most moving companies we talk to miss about 10–20 quote calls a week while they're on jobs.\n\nThat's usually where this helps.\n\nHappy to show how it would work for your setup if you're curious.`
+  },
+  seen_final: {
+    code:'0303', type:'text', title:'Final', stage:2, timing:'4 days',
+    content: `Last ping on this.\n\nIf catching missed moving quote calls is ever something you want help with, feel free to reach out.\n\nOtherwise I won't bug you again.`
+  },
+  // Stage 3: Activation
+  act_main: {
+    code:'0400', type:'text', title:'Activation Message', stage:3, timing:'Send when they want to move forward',
+    content: `Awesome.\n\nThe way we usually do it is set up a version trained for your moving company.\n\nIt asks about things like:\n• move date\n• origin/destination\n• home size\n• contact info\n\nThen sends the lead directly to you.\n\nTakes about 15 minutes to set up.`
+  },
+  act_followup: {
+    code:'0401', type:'text', title:'Follow Up', stage:3, timing:'Same day',
+    content: `If you're good with it we can get your version live pretty quickly.\n\nI'll send over the setup link and we can launch it this week.`
+  },
+  act_bump: {
+    code:'0402', type:'text', title:'Bump', stage:3, timing:'24 hours',
+    content: `Just checking back — still happy to get your moving call assistant set up if you want to try it out.`
+  },
+  act_final: {
+    code:'0403', type:'text', title:'Final', stage:3, timing:'3 days',
+    content: `No worries if timing isn't right.\n\nIf you ever want help catching missed moving quote calls just shoot me a message.`
+  },
+  // Stage 4: Payment
+  payment: {
+    code:'100', type:'text', title:'Payment + Onboarding Link', stage:4, timing:'After activation confirmation',
+    content: `Awesome — here's the setup link.\n\nOnce it's completed we'll configure the assistant for your moving company.\n\n[Stripe Link]\n\nRight after payment you'll be redirected to a short onboarding form so we can train it for your business.`
+  },
+};
+
+// Sequence for each stage
+const STAGE_SEQUENCES = [
+  // Stage 0: call needed
+  ['call_intro', 'call_voicemail'],
+  // Stage 1: demo texts
+  ['demo_text', 'demo_followup', 'demo_bump', 'demo_final'],
+  // Stage 2: seen demo
+  ['seen_main', 'seen_followup', 'seen_bump', 'seen_final'],
+  // Stage 3: activation
+  ['act_main', 'act_followup', 'act_bump', 'act_final'],
+  // Stage 4: payment
+  ['payment'],
+];
+
+let leads = [];
+let currentLeadId = null;
+let currentFilter = 'all';
+
+function save() {
+  // no-op (legacy v1 asset)
+}
+
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+
+function now() { return Date.now(); }
+function fmtTime(ts) {
+  const d = new Date(ts);
+  const now = new Date();
+  const diff = (now - d) / 1000;
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+  return Math.floor(diff/86400) + 'd ago';
+}
+function fmtAbsTime(ts) {
+  return new Date(ts).toLocaleString('en-US', {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+}
+
+function getNextAction(lead) {
+  const stageSeq = STAGE_SEQUENCES[lead.stage] || [];
+  const sent = lead.sentMessages || [];
+  for (let key of stageSeq) {
+    if (!sent.includes(key)) {
+      return { key, msg: MESSAGES[key] };
+    }
+  }
+  return null;
+}
+
+function isActionDue(lead) {
+  const next = getNextAction(lead);
+  if (!next) return false;
+  if (lead.stage === 4 && (lead.sentMessages||[]).includes('payment')) return false;
+  const msg = next.msg;
+  if (!msg.timing) return true;
+  const lastSent = lead.lastMessageAt || lead.createdAt;
+  const elapsed = (now() - lastSent) / 3600000; // hours
+  if (msg.timing.includes('4 hours')) return elapsed >= 4;
+  if (msg.timing.includes('Same day')) return elapsed >= 1;
+  if (msg.timing.includes('24 hours')) return elapsed >= 24;
+  if (msg.timing.includes('Next day')) return elapsed >= 20;
+  if (msg.timing.includes('2 days')) return elapsed >= 48;
+  if (msg.timing.includes('3 days')) return elapsed >= 72;
+  if (msg.timing.includes('4 days')) return elapsed >= 96;
+  return true;
+}
+
+function renderLeadList() {
+  const list = document.getElementById('lead-list');
+  const search = document.getElementById('search-input').value.toLowerCase();
+  let filtered = leads.filter(l => {
+    if (search && !l.name.toLowerCase().includes(search) && !l.phone.includes(search)) return false;
+    if (currentFilter === 'action') return isActionDue(l) && lead.stage < 5;
+    if (currentFilter !== 'all' && currentFilter !== 'action') {
+      return l.stage === parseInt(currentFilter);
+    }
+    return true;
+  });
+  // Sort: action needed first, then by lastMessageAt
+  filtered.sort((a,b) => {
+    const aA = isActionDue(a); const bA = isActionDue(b);
+    if (aA && !bA) return -1; if (!aA && bA) return 1;
+    return (b.lastMessageAt||b.createdAt) - (a.lastMessageAt||a.createdAt);
+  });
+
+  // Update header stats
+  document.getElementById('hdr-total').textContent = leads.length;
+  const needAction = leads.filter(l => isActionDue(l) && l.stage < 5).length;
+  document.getElementById('hdr-action').textContent = needAction;
+
+  if (!filtered.length) {
+    list.innerHTML = `<div style="padding:32px 20px;text-align:center;color:var(--text3);font-size:13px">No leads found</div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map((l,i) => {
+    const active = l.id === currentLeadId;
+    const action = isActionDue(l) && l.stage < 5;
+    const bc = BADGE_CLASS[l.stage] || 'badge-s1';
+    return `
+      <div class="lead-item ${active?'active':''}" onclick="selectLead('${l.id}')">
+        <div class="lead-item-top">
+          <span class="lead-name">${l.name}</span>
+          <span class="lead-time">${fmtTime(l.lastMessageAt||l.createdAt)}</span>
+        </div>
+        <div class="lead-phone">${l.phone}</div>
+        <span class="lead-stage-badge ${bc}">${STAGES[l.stage]?.short||''}</span>
+        ${action ? '<div class="action-dot"></div>' : ''}
+      </div>
+      ${i < filtered.length-1 ? '<div class="lead-item-divider"></div>' : ''}
+    `;
+  }).join('');
+}
+
+function selectLead(id) {
+  currentLeadId = id;
+  renderLeadList();
+  renderDetail();
+  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('lead-detail').style.display = 'block';
+  document.getElementById('overview-area').style.display = 'none';
+}
+
+function renderDetail() {
+  const lead = leads.find(l => l.id === currentLeadId);
+  if (!lead) return;
+  const el = document.getElementById('lead-detail');
+  const nextAction = getNextAction(lead);
+  const sentMessages = lead.sentMessages || [];
+  const isComplete = lead.stage >= 5 || (lead.stage === 4 && sentMessages.includes('payment'));
+
+  // Pipeline
+  const pipelineHTML = `
+    <div class="pipeline">
+      <div class="pipeline-label">Pipeline Stage</div>
+      <div class="pipeline-track">
+        ${STAGES.map((s,i) => {
+          const done = i < lead.stage;
+          const current = i === lead.stage;
+          const cls = done ? 'done' : current ? 'current' : '';
+          return `
+            ${i > 0 ? `<div class="pipeline-connector ${i <= lead.stage ? 'done' : ''}"></div>` : ''}
+            <div class="pipeline-step ${cls}" title="Move to ${s.name}" onclick="moveToStage(${i})">
+              <div class="pipeline-step-node">${done ? '✓' : (i+1)}</div>
+              <div class="pipeline-step-label">${s.short}</div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+
+  // Next action card
+  let actionHTML = '';
+  if (isComplete) {
+    actionHTML = `<div class="next-ribbon"><div class="next-icon">✓</div><div class="next-text"><div class="next-label">Complete</div><div class="next-desc">This lead has completed the full pipeline. Nice work!</div></div></div>`;
+  } else if (nextAction) {
+    const msg = nextAction.msg;
+    const isCall = msg.type === 'call';
+    actionHTML = `
+      <div class="next-ribbon">
+        <div class="next-icon">${isCall ? '📞' : '💬'}</div>
+        <div class="next-text">
+          <div class="next-label">Next Action</div>
+          <div class="next-desc">${isCall ? 'Call' : 'Text'}: <strong>${msg.title}</strong>${msg.timing ? ` · <span style="color:var(--text3)">${msg.timing}</span>` : ''}</div>
+        </div>
+        <span style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;background:var(--bg4);border:1px solid var(--border);border-radius:4px;padding:3px 8px">${msg.code}</span>
+      </div>
+    `;
+  } else {
+    actionHTML = `<div class="next-ribbon"><div class="next-icon">⏳</div><div class="next-text"><div class="next-label">Waiting</div><div class="next-desc">All messages sent. Waiting for response — advance stage when they reply positively.</div></div></div>`;
+  }
+
+  // Stage messages
+  let messagesHTML = '';
+  if (!isComplete && lead.stage < STAGE_SEQUENCES.length) {
+    const stageSeq = STAGE_SEQUENCES[lead.stage];
+    messagesHTML = stageSeq.map(key => {
+      const msg = MESSAGES[key];
+      if (!msg) return '';
+      const isSent = sentMessages.includes(key);
+      const isNext = nextAction && nextAction.key === key;
+      const isCall = msg.type === 'call';
+      const content = msg.content.replace(/\[Contact\]/g, lead.contact || 'there').replace(/\[Your Name\]/g, 'Your Name');
+      return `
+        <div class="action-card" style="${isSent ? 'opacity:0.45;' : ''}${isNext ? '' : isCall ? 'border-left-color:var(--blue);' : ''}">
+          <div class="action-card-label" style="${isCall?'color:var(--blue)':''}">
+            ${isCall ? '📞 Call Script' : '💬 Text Message'} · ${msg.code} ${isSent?'<span style="color:var(--green);margin-left:8px">✓ Sent</span>':''}
+          </div>
+          <div class="action-card-title">${msg.title}</div>
+          ${msg.timing ? `<div class="action-card-timing"><span class="timing-badge">${msg.timing}</span></div>` : ''}
+          <div class="message-box" style="position:relative">
+            ${escHTML(content).replace(/\[([^\]]+)\]/g,'<span class="placeholder">[$1]</span>')}
+            <button class="copy-btn" onclick="copyMsg(this,'${key}','${lead.id}')">Copy</button>
+          </div>
+          ${!isSent ? `
+          <div class="stage-actions">
+            <button class="stage-btn advance" onclick="markSent('${lead.id}','${key}')">✓ Mark as Sent</button>
+          </div>` : ''}
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Advance stage buttons
+  const advanceHTML = lead.stage < STAGES.length ? `
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <span style="font-size:11px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;font-weight:600">Advance to:</span>
+      ${STAGES.map((s,i) => i > lead.stage ? `<button class="stage-btn" onclick="moveToStage(${i})">${s.name} →</button>` : '').filter(Boolean).join('')}
+    </div>
+  ` : '';
+
+  // History
+  const histHTML = (lead.history||[]).length ? `
+    <div class="history-section">
+      <div class="section-label">Activity Log</div>
+      <div class="history-list">
+        ${[...(lead.history||[])].reverse().map(h => `
+          <div class="history-item">
+            <span class="history-code">${h.code}</span>
+            <div class="history-meta">
+              <div class="history-name">${h.label}</div>
+              <div class="history-time">${fmtAbsTime(h.ts)}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  ` : '';
+
+  el.innerHTML = `
+    <div class="lead-detail">
+      <div class="detail-header">
+        <div>
+          <div class="detail-name">${lead.name}</div>
+          <div class="detail-phone">${lead.phone}${lead.contact ? ' · ' + lead.contact : ''}</div>
+        </div>
+        <div class="detail-actions">
+          <span style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">Added ${fmtAbsTime(lead.createdAt)}</span>
+          <button class="btn btn-danger" onclick="deleteLead('${lead.id}')">Delete</button>
+        </div>
+      </div>
+      ${pipelineHTML}
+      ${actionHTML}
+      ${messagesHTML}
+      ${advanceHTML}
+      ${histHTML}
+    </div>
+  `;
+}
+
+function escHTML(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+function markSent(leadId, msgKey) {
+  const lead = leads.find(l => l.id === leadId);
+  if (!lead) return;
+  if (!lead.sentMessages) lead.sentMessages = [];
+  if (!lead.sentMessages.includes(msgKey)) {
+    lead.sentMessages.push(msgKey);
+    const msg = MESSAGES[msgKey];
+    if (!lead.history) lead.history = [];
+    lead.history.push({ code: msg.code, label: `${msg.type==='call'?'Called':'Texted'}: ${msg.title}`, ts: now() });
+    lead.lastMessageAt = now();
+    save();
+    renderLeadList();
+    renderDetail();
+    showToast('Marked as sent');
+  }
+}
+
+function moveToStage(stageIdx) {
+  const lead = leads.find(l => l.id === currentLeadId);
+  if (!lead || stageIdx <= lead.stage) return;
+  const oldStage = lead.stage;
+  lead.stage = stageIdx;
+  lead.sentMessages = [];
+  if (!lead.history) lead.history = [];
+  lead.history.push({ code: `S${stageIdx+1}`, label: `Advanced to: ${STAGES[stageIdx].name}`, ts: now() });
+  save();
+  renderLeadList();
+  renderDetail();
+  showToast(`Moved to ${STAGES[stageIdx].name}`);
+}
+
+function copyMsg(btn, msgKey, leadId) {
+  const lead = leads.find(l => l.id === leadId);
+  const msg = MESSAGES[msgKey];
+  if (!msg || !lead) return;
+  const content = msg.content
+    .replace(/\[Contact\]/g, lead.contact || 'there')
+    .replace(/\[Your Name\]/g, 'Your Name');
+  navigator.clipboard.writeText(content).then(() => {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function deleteLead(id) {
+  if (!confirm('Delete this lead?')) return;
+  leads = leads.filter(l => l.id !== id);
+  currentLeadId = null;
+  save();
+  renderLeadList();
+  document.getElementById('lead-detail').style.display = 'none';
+  document.getElementById('empty-state').style.display = 'flex';
+}
+
+function filterLeads() { renderLeadList(); }
+function setFilter(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderLeadList();
+}
+
+function openModal() {
+  document.getElementById('modal').classList.add('open');
+  setTimeout(() => document.getElementById('inp-name').focus(), 50);
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  document.getElementById('inp-name').value = '';
+  document.getElementById('inp-phone').value = '';
+  document.getElementById('inp-contact').value = '';
+}
+function addLead() {
+  const name = document.getElementById('inp-name').value.trim();
+  const phone = document.getElementById('inp-phone').value.trim();
+  const contact = document.getElementById('inp-contact').value.trim();
+  if (!name || !phone) { showToast('Name and phone required','error'); return; }
+  const lead = {
+    id: genId(),
+    name, phone, contact,
+    stage: 0,
+    sentMessages: [],
+    history: [{ code:'NEW', label:'Lead created', ts: now() }],
+    createdAt: now(),
+    lastMessageAt: null,
+  };
+  leads.unshift(lead);
+  save();
+  closeModal();
+  renderLeadList();
+  selectLead(lead.id);
+  showToast('Lead added');
+}
+
+function showOverview() {
+  currentLeadId = null;
+  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('lead-detail').style.display = 'none';
+  document.getElementById('overview-area').style.display = 'block';
+  renderLeadList();
+  renderOverview();
+}
+
+function renderOverview() {
+  const ov = document.getElementById('overview-area');
+  const counts = STAGES.map((_,i) => leads.filter(l=>l.stage===i).length);
+  const actionItems = leads
+    .filter(l => isActionDue(l) && l.stage < 5)
+    .sort((a,b) => (a.lastMessageAt||a.createdAt) - (b.lastMessageAt||b.createdAt));
+
+  ov.innerHTML = `
+    <div class="overview">
+      <div class="ov-title">PIPELINE OVERVIEW</div>
+      <div class="ov-grid">
+        ${STAGES.map((s,i) => `
+          <div class="ov-card">
+            <div class="ov-card-num" style="color:${['var(--gold)','#a67dd4','var(--blue)','var(--green)','var(--gold2)'][i]}">${counts[i]}</div>
+            <div class="ov-card-label">${s.short}</div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="section-label">Action Queue <span style="color:var(--gold);font-style:normal">${actionItems.length} needed</span></div>
+      ${actionItems.length ? `
+        <div class="action-queue">
+          ${actionItems.map(l => {
+            const next = getNextAction(l);
+            const elapsed = (now() - (l.lastMessageAt||l.createdAt)) / 3600000;
+            const urgClass = elapsed > 24 ? 'urg-now' : elapsed > 4 ? 'urg-soon' : 'urg-later';
+            return `
+              <div class="queue-item" onclick="selectLead('${l.id}')">
+                <div class="queue-urgency ${urgClass}"></div>
+                <div class="queue-info">
+                  <div class="queue-name">${l.name}</div>
+                  <div class="queue-action">${next ? next.msg.type==='call'?'📞 '+next.msg.title:'💬 '+next.msg.title : ''} · ${STAGES[l.stage]?.name}</div>
+                </div>
+                <div class="queue-time">${fmtTime(l.lastMessageAt||l.createdAt)}</div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      ` : `<div style="color:var(--text3);font-size:13px;padding:20px 0">No actions needed right now. You're all caught up.</div>`}
+    </div>
+  `;
+}
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderColor = type==='error' ? 'var(--red)' : 'var(--green)';
+  t.style.color = type==='error' ? 'var(--red)' : 'var(--green)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+document.getElementById('modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+// Handle Enter in modal
+document.getElementById('inp-contact').addEventListener('keydown', e => { if(e.key==='Enter') addLead(); });
+
+// Init
+renderLeadList();
+if (leads.length === 0) {
+  document.getElementById('empty-state').style.display = 'flex';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+{
+  "name": "Tharros Scout",
+  "short_name": "Scout",
+  "id": "/?utm_source=tharros_scout",
+  "start_url": "/?utm_source=tharros_scout",
+  "scope": "/",
+  "description": "Sales follow-up assistant that drives your manual pipeline execution.",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0B0E11",
+  "theme_color": "#00F5FF",
+  "icons": [
+    {
+      "src": "assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

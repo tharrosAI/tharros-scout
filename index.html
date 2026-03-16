@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tharros Scout</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#00F5FF">
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">T</div>
+    THARROS SCOUT
+  </div>
+    <div class="header-right">
+      <div class="stat-pill" id="stat-total"><strong id="hdr-total">0</strong> Leads</div>
+      <div class="stat-pill" id="stat-action"><strong id="hdr-action">0</strong> Need Action</div>
+      <button class="btn" onclick="showOverview()">Overview</button>
+      <button class="btn" onclick="showScriptLibrary()">Script Library</button>
+      <button class="btn btn-refresh" onclick="fetchLeads()">Refresh</button>
+      <button class="btn btn-export" onclick="exportLeads()">Export Data</button>
+      <button class="add-lead-btn" style="width:auto;padding:8px 18px" onclick="openModal()">+ New Lead</button>
+    </div>
+  </header>
+
+<div class="app">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-title">Pipeline</span>
+      <input class="search-box" type="text" placeholder="Search leads..." id="search-input" oninput="filterLeads()">
+      <div class="filter-tabs" id="filter-tabs">
+        <button class="filter-tab active" data-filter="all">All</button>
+        <button class="filter-tab" data-filter="action">Action Needed</button>
+        <button class="filter-tab" data-filter="0">1st Contact</button>
+        <button class="filter-tab" data-filter="1">Demo</button>
+        <button class="filter-tab" data-filter="2">Demo Done</button>
+        <button class="filter-tab" data-filter="3">Activation</button>
+        <button class="filter-tab" data-filter="4">Payment</button>
+      </div>
+    </div>
+    <div class="lead-list" id="lead-list"></div>
+  </div>
+
+  <div class="main" id="main-area">
+    <div class="empty-state" id="empty-state">
+      <div class="empty-icon">◎</div>
+      <div style="font-size:15px;font-weight:500">No lead selected</div>
+      <div style="font-size:13px;color:var(--text3)">Select a lead or add a new one</div>
+      <button class="add-lead-btn" style="width:180px;margin-top:8px" onclick="openModal()">+ Add First Lead</button>
+    </div>
+    <div id="lead-detail" style="display:none"></div>
+    <div id="overview-area" style="display:none"></div>
+    <div id="script-area" style="display:none">
+      <div class="script-dashboard">
+        <h3>Script Library</h3>
+        <div class="script-form">
+          <select id="script-select" onchange="loadScriptEditor(this.value)"></select>
+          <input id="script-title-input" placeholder="Title">
+          <input id="script-timing-input" placeholder="Timing">
+          <textarea id="script-content-input" placeholder="Script content"></textarea>
+          <div class="script-actions">
+            <button class="btn" onclick="saveScriptEdit()">Save script</button>
+            <button class="btn btn-danger" onclick="resetScriptEdit()">Reset script</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-title">NEW LEAD</div>
+    <div class="modal-field">
+      <label>Business Name</label>
+      <input type="text" id="inp-name" placeholder="e.g. Alpine Movers" />
+    </div>
+    <div class="modal-field">
+      <label>Phone Number</label>
+      <input type="text" id="inp-phone" placeholder="(555) 555-5555" />
+    </div>
+    <div class="modal-field">
+      <label>Contact Name (optional)</label>
+      <input type="text" id="inp-contact" placeholder="e.g. John" />
+    </div>
+    <div class="modal-field">
+      <label>Website (optional)</label>
+      <input type="text" id="inp-website" placeholder="https://example.com" />
+    </div>
+    <div class="modal-field">
+      <label>City (optional)</label>
+      <input type="text" id="inp-city" placeholder="e.g. Charlotte" />
+    </div>
+    <div class="modal-field">
+      <label>State (optional)</label>
+      <input type="text" id="inp-state" placeholder="e.g. NC" />
+    </div>
+    <div class="modal-field">
+      <label>Email (optional)</label>
+      <input type="email" id="inp-email" placeholder="you@company.com" />
+    </div>
+    <div class="modal-field">
+      <label>Notes (optional)</label>
+      <textarea id="inp-notes" rows="3" placeholder="Leads context, needs, reminders"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="add-lead-btn" style="width:auto;padding:9px 22px" onclick="addLead()">Add Lead</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker
+        .register('/service-worker.js', { scope: '/' })
+        .catch(err => {
+          console.warn('Service worker registration failed', err);
+        });
+    });
+  }
+</script>
+</body>
+</html>
