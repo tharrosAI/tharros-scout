@@ -3,113 +3,191 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tharros Scout</title>
+  <title>Tharros Scout Supercharged</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#00F5FF">
 </head>
 <body>
 
-<header>
-  <div class="logo">
+<header class="app-header">
+  <div class="branding">
     <div class="logo-mark">T</div>
-    THARROS SCOUT
-  </div>
-    <div class="header-right">
-      <div class="stat-pill" id="stat-total"><strong id="hdr-total">0</strong> Leads</div>
-      <div class="stat-pill" id="stat-action"><strong id="hdr-action">0</strong> Need Action</div>
-      <button class="btn" onclick="showOverview()">Overview</button>
-      <button class="btn" onclick="showScriptLibrary()">Script Library</button>
-      <button class="btn btn-refresh" onclick="fetchLeads()">Refresh</button>
-      <button class="btn btn-export" onclick="exportLeads()">Export Data</button>
-      <button class="add-lead-btn" style="width:auto;padding:8px 18px" onclick="openModal()">+ New Lead</button>
+    <div>
+      <div class="logo-title">THARROS SCOUT</div>
+      <div class="logo-subtitle">Sales Enablement Playbook</div>
     </div>
-  </header>
+  </div>
+  <div class="header-actions">
+    <div class="header-stats">
+      <div class="header-stat">
+        <div class="header-stat-label">Active Leads</div>
+        <div class="header-stat-value"><span id="hdr-total">0</span></div>
+      </div>
+      <div class="header-stat">
+        <div class="header-stat-label">Need Action</div>
+        <div class="header-stat-value"><span id="hdr-action">0</span></div>
+      </div>
+    </div>
+    <div class="header-buttons">
+      <button class="btn btn-primary" onclick="showOverview()">War Room</button>
+      <button class="btn btn-outline" onclick="showHistoricalMetrics()">Historical Metrics</button>
+      <button class="btn btn-outline" onclick="showScriptLibrary()">Script Library</button>
+      <button class="btn btn-ghost btn-refresh" onclick="fetchLeads()">Refresh</button>
+      <button class="btn btn-ghost btn-export" onclick="exportLeads()">Export</button>
+      <button class="add-lead-btn" onclick="openModal()">+ New Lead</button>
+    </div>
+  </div>
+</header>
 
 <div class="app">
-  <div class="sidebar">
-    <div class="sidebar-header">
-      <span class="sidebar-title">Pipeline</span>
-      <input class="search-box" type="text" placeholder="Search leads..." id="search-input" oninput="filterLeads()">
-      <div class="filter-tabs" id="filter-tabs">
-        <button class="filter-tab active" data-filter="all">All</button>
-        <button class="filter-tab" data-filter="action">Action Needed</button>
-        <button class="filter-tab" data-filter="0">1st Contact</button>
-        <button class="filter-tab" data-filter="1">Demo</button>
-        <button class="filter-tab" data-filter="2">Demo Done</button>
-        <button class="filter-tab" data-filter="3">Activation</button>
-        <button class="filter-tab" data-filter="4">Payment</button>
-        <button class="filter-tab" data-filter="archived">Archived</button>
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <div>
+        <div class="sidebar-title">Pipeline</div>
+        <div class="sidebar-subtitle">Filter every vertical, product, funnel, and channel.</div>
       </div>
+    </div>
+    <div class="sidebar-search">
+      <input class="search-box" type="text" placeholder="Search leads..." id="search-input" oninput="filterLeads()">
+    </div>
+    <div class="filter-controls">
+      <select id="filter-vertical" onchange="setDropdownFilter('vertical', this.value)"></select>
+      <select id="filter-product" onchange="setDropdownFilter('product', this.value)"></select>
+      <select id="filter-funnel" onchange="setDropdownFilter('funnel', this.value)"></select>
+      <select id="filter-channel" onchange="setDropdownFilter('channel', this.value)"></select>
+      <button class="btn btn-ghost" onclick="resetFilters()">Clear filters</button>
+    </div>
+    <div class="stage-filters" id="filter-tabs">
+      <button class="filter-tab active" data-filter="all">All Leads</button>
+      <button class="filter-tab" data-filter="action">Action Needed</button>
+      <button class="filter-tab" data-filter="0">1st Contact</button>
+      <button class="filter-tab" data-filter="1">Demo</button>
+      <button class="filter-tab" data-filter="2">Demo Done</button>
+      <button class="filter-tab" data-filter="3">Activation</button>
+      <button class="filter-tab" data-filter="4">Payment</button>
+      <button class="filter-tab" data-filter="archived">Archived</button>
     </div>
     <div class="lead-list" id="lead-list"></div>
-  </div>
+  </aside>
 
-  <div class="main" id="main-area">
-    <div class="empty-state" id="empty-state">
-      <div class="empty-icon">◎</div>
-      <div style="font-size:15px;font-weight:500">No lead selected</div>
-      <div style="font-size:13px;color:var(--text3)">Select a lead or add a new one</div>
-      <button class="add-lead-btn" style="width:180px;margin-top:8px" onclick="openModal()">+ Add First Lead</button>
-    </div>
-    <div id="lead-detail" style="display:none"></div>
-    <div id="overview-area" style="display:none"></div>
-    <div id="script-area" style="display:none">
-      <div class="script-dashboard">
-        <h3>Script Library</h3>
-        <div class="script-form">
-          <select id="script-select" onchange="loadScriptEditor(this.value)"></select>
-          <input id="script-title-input" placeholder="Title">
-          <input id="script-timing-input" placeholder="Timing">
-          <textarea id="script-content-input" placeholder="Script content"></textarea>
-          <div class="script-actions">
-            <button class="btn" onclick="saveScriptEdit()">Save script</button>
-            <button class="btn btn-danger" onclick="resetScriptEdit()">Reset script</button>
+  <main class="workspace">
+    <section id="overview-area" class="panel overview-panel"></section>
+    <section id="metrics-area" class="panel metrics-panel hidden"></section>
+    <section id="lead-detail" class="panel detail-panel hidden"></section>
+    <section id="script-area" class="panel script-panel hidden">
+      <div class="script-header">
+        <div>
+          <div class="section-label">Script Library</div>
+          <div class="section-headline">Manage every asset pulled from the shared sheet.</div>
+        </div>
+        <button class="btn btn-ghost" onclick="fetchAssets()">Reload scripts</button>
+      </div>
+      <div class="script-grid">
+        <div class="script-controls">
+          <label>
+            Vertical
+            <select id="script-vertical"></select>
+          </label>
+          <label>
+            Product
+            <select id="script-product"></select>
+          </label>
+          <label>
+            Funnel
+            <select id="script-funnel"></select>
+          </label>
+          <label>
+            Stage
+            <select id="script-stage"></select>
+          </label>
+          <label>
+            Asset Step
+            <select id="script-step"></select>
+          </label>
+        </div>
+        <div class="script-meta-row">
+          <div>
+            <div class="script-meta-label">Asset ID</div>
+            <div class="script-id" id="script-id-display">—</div>
+          </div>
+          <div>
+            <div class="script-meta-label">Channel</div>
+            <div class="script-channel" id="script-channel-display">Channel</div>
           </div>
         </div>
+        <textarea id="script-content-input" placeholder="Script content"></textarea>
+        <div class="script-actions">
+          <button class="btn btn-primary" onclick="saveScriptEdit()">Save script</button>
+          <button class="btn btn-outline" onclick="resetScriptEdit()">Reset script</button>
+        </div>
       </div>
+    </section>
+    <div class="empty-state hidden" id="empty-state">
+      <div class="empty-icon">◎</div>
+      <div class="empty-title">Nothing selected</div>
+      <div class="empty-subtitle">Choose a lead or open the war room to keep things moving.</div>
+      <button class="add-lead-btn" onclick="openModal()">+ New Lead</button>
     </div>
-  </div>
+  </main>
 </div>
 
 <div class="modal-overlay" id="modal">
   <div class="modal">
-    <div class="modal-title">NEW LEAD</div>
-    <div class="modal-field">
-      <label>Business Name</label>
-      <input type="text" id="inp-name" placeholder="e.g. Alpine Movers" />
-    </div>
-    <div class="modal-field">
-      <label>Phone Number</label>
-      <input type="text" id="inp-phone" placeholder="(555) 555-5555" />
-    </div>
-    <div class="modal-field">
-      <label>Contact Name (optional)</label>
-      <input type="text" id="inp-contact" placeholder="e.g. John" />
-    </div>
-    <div class="modal-field">
-      <label>Website (optional)</label>
-      <input type="text" id="inp-website" placeholder="https://example.com" />
-    </div>
-    <div class="modal-field">
-      <label>City (optional)</label>
-      <input type="text" id="inp-city" placeholder="e.g. Charlotte" />
-    </div>
-    <div class="modal-field">
-      <label>State (optional)</label>
-      <input type="text" id="inp-state" placeholder="e.g. NC" />
-    </div>
-    <div class="modal-field">
-      <label>Email (optional)</label>
-      <input type="email" id="inp-email" placeholder="you@company.com" />
-    </div>
-    <div class="modal-field">
-      <label>Notes (optional)</label>
-      <textarea id="inp-notes" rows="3" placeholder="Leads context, needs, reminders"></textarea>
+    <div class="modal-title">Add New Lead</div>
+    <div class="modal-grid">
+      <label>
+        Vertical
+        <select id="inp-vertical"></select>
+      </label>
+      <label>
+        Product
+        <select id="inp-product"></select>
+      </label>
+      <label>
+        Funnel
+        <select id="inp-funnel"></select>
+      </label>
+      <label>
+        Channel
+        <input type="text" id="inp-channel" disabled placeholder="Derived from funnel" />
+      </label>
+      <label>
+        Business Name
+        <input type="text" id="inp-name" placeholder="e.g. Alpine Movers" />
+      </label>
+      <label>
+        Phone Number
+        <input type="text" id="inp-phone" placeholder="(555) 555-5555" />
+      </label>
+      <label>
+        Contact Name
+        <input type="text" id="inp-contact" placeholder="e.g. Xavier" />
+      </label>
+      <label>
+        Website
+        <input type="text" id="inp-website" placeholder="https://example.com" />
+      </label>
+      <label>
+        City
+        <input type="text" id="inp-city" placeholder="e.g. Charlotte" />
+      </label>
+      <label>
+        State
+        <input type="text" id="inp-state" placeholder="e.g. NC" />
+      </label>
+      <label>
+        Email
+        <input type="email" id="inp-email" placeholder="you@company.com" />
+      </label>
+      <label class="notes-field">
+        Notes
+        <textarea id="inp-notes" rows="3" placeholder="Context, reminders, priorities"></textarea>
+      </label>
     </div>
     <div class="modal-actions">
-      <button class="btn" onclick="closeModal()">Cancel</button>
-      <button class="add-lead-btn" style="width:auto;padding:9px 22px" onclick="addLead()">Add Lead</button>
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="add-lead-btn" onclick="addLead()">Add Lead</button>
     </div>
   </div>
 </div>
