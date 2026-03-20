@@ -1008,11 +1008,13 @@ function filterLeads() {
 
 function openModal() {
   document.getElementById('modal').classList.add('open');
+  document.body.classList.add('modal-open');
   setTimeout(() => document.getElementById('inp-name').focus(), 50);
 }
 
 function closeModal() {
   document.getElementById('modal').classList.remove('open');
+  document.body.classList.remove('modal-open');
   ['inp-name','inp-phone','inp-contact','inp-website','inp-city','inp-state','inp-email','inp-notes'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
