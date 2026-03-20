@@ -1163,6 +1163,8 @@ body {
 body.modal-open {
   height: 100vh;
   overflow: hidden;
+  position: fixed;
+  width: 100%;
 }
 
 @media (max-width: 768px) {
@@ -1173,6 +1175,11 @@ body.modal-open {
   }
   .modal-grid {
     gap: 8px;
+  }
+  .modal {
+    width: min(90vw, 420px);
+    padding: 18px;
+    max-height: 88vh;
   }
 }
 
