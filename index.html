@@ -13,9 +13,10 @@
 <header class="app-header">
   <div class="branding">
     <div class="logo-mark" aria-label="Tharros Scout">
-      <svg viewBox="0 0 64 64" width="36" height="36" aria-hidden="true">
-        <path d="M32 4 8 12v15c0 16 9 30 24 33 15-3 24-17 24-33V12L32 4z" fill="currentColor" opacity="0.15"></path>
-        <path d="M32 6 12 14v14c0 15 9 27 20 30 11-3 20-15 20-30V14L32 6z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"></path>
+      <svg viewBox="0 0 64 64" width="38" height="38" aria-hidden="true">
+        <path d="M32 4s-18 5-18 15v13c0 13 8 24 18 27 10-3 18-14 18-27V19c0-10-18-15-18-15z" fill="currentColor" opacity="0.2"></path>
+        <path d="M32 6s-14 4-14 13v12c0 11 6 20 14 23 8-3 14-12 14-23V19c0-9-14-13-14-13z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"></path>
+        <path d="M28 23h8v10h-8z" fill="currentColor"></path>
       </svg>
     </div>
     <div>
@@ -34,8 +35,8 @@
       </div>
     </div>
     <div class="header-buttons">
-      <button class="btn btn-ghost btn-refresh" onclick="fetchLeads()">Refresh</button>
-      <button class="btn btn-ghost btn-export" onclick="exportLeads()">Export</button>
+      <button class="btn btn-ghost mobile-hide" onclick="fetchLeads()">Refresh</button>
+      <button class="btn btn-ghost mobile-hide" onclick="exportLeads()">Export</button>
       <button class="add-lead-btn" onclick="openModal()">+ New Lead</button>
     </div>
   </div>
@@ -48,67 +49,67 @@
 </nav>
 
 <div class="app">
-  <main class="war-room" id="war-room">
-    <section class="focus-column panel">
-    <div class="focus-head">
+<main class="war-room" id="war-room">
+    <div class="stage-summary" id="stage-summary"></div>
+    <div class="war-columns">
+      <section class="focus-column panel">
+        <div class="focus-head">
+          <div>
+            <div class="section-label">Focus Queue</div>
+            <div class="section-headline">Urgent conversations in view.</div>
+          </div>
+          <input class="search-box" type="text" placeholder="Search companies" id="search-input" oninput="filterLeads()">
+        </div>
+        <div class="focus-section">
+          <div class="focus-section-title">
+            <span>Needs Action</span>
+            <span id="needs-count">0</span>
+          </div>
+          <div class="focus-list" id="focus-needs"></div>
+        </div>
+        <div class="focus-section">
+          <div class="focus-section-title">
+            <span>Follow-ups due</span>
+            <span id="follow-count">0</span>
+          </div>
+          <div class="focus-list" id="focus-follow"></div>
+        </div>
+        <div class="focus-section">
+          <div class="focus-section-title">
+            <span>New leads</span>
+            <span id="new-count">0</span>
+          </div>
+          <div class="focus-list" id="focus-new"></div>
+        </div>
+      </section>
+      <section class="next-column panel">
         <div>
-          <div class="section-label">Focus Queue</div>
+          <div class="section-label">Next Actions</div>
+          <div class="section-headline">What to do right now.</div>
         </div>
-        <input class="search-box" type="text" placeholder="Search by company" id="search-input" oninput="filterLeads()">
-      </div>
-      <div class="focus-section">
-        <div class="focus-section-title">
-          <span>Needs Action</span>
-          <span id="needs-count">0</span>
-        </div>
-        <div class="focus-list" id="focus-needs"></div>
-      </div>
-      <div class="focus-section">
-        <div class="focus-section-title">
-          <span>Follow-ups due</span>
-          <span id="follow-count">0</span>
-        </div>
-        <div class="focus-list" id="focus-follow"></div>
-      </div>
-      <div class="focus-section">
-        <div class="focus-section-title">
-          <span>New leads</span>
-          <span id="new-count">0</span>
-        </div>
-        <div class="focus-list" id="focus-new"></div>
-      </div>
-    </section>
-    <section class="action-column panel">
-      <div class="action-head">
+        <div class="next-actions" id="next-actions"></div>
+      </section>
+      <section class="pulse-column panel">
         <div>
-          <div class="section-label">Action Engine</div>
+          <div class="section-label">Pipeline Pulse</div>
+          <div class="section-headline">Signals from the whole funnel.</div>
         </div>
-        <div class="action-controls">
-          <button class="btn btn-ghost secondary-toggle" id="today-toggle" onclick="toggleTodayMode()">Today Mode</button>
+        <div class="pulse-grid">
+          <div class="pulse-block">
+            <div class="pulse-title">Bottlenecks</div>
+            <div id="pulse-bottleneck" class="pulse-content"></div>
+          </div>
+          <div class="pulse-block">
+            <div class="pulse-title">Hot deals</div>
+            <div id="pulse-hot" class="pulse-content"></div>
+          </div>
+          <div class="pulse-block">
+            <div class="pulse-title">Drop-off rate</div>
+            <div id="pulse-dropoff" class="pulse-content"></div>
+          </div>
         </div>
-      </div>
-      <div class="action-cards" id="action-cards"></div>
-      <div class="next-actions" id="next-actions"></div>
-    </section>
-    <section class="pulse-column panel">
-      <div>
-        <div class="section-label">Pipeline Pulse</div>
-      </div>
-      <div class="pulse-grid">
-        <div class="pulse-block">
-          <div class="pulse-title">Bottlenecks</div>
-          <div id="pulse-bottleneck" class="pulse-content"></div>
-        </div>
-        <div class="pulse-block">
-          <div class="pulse-title">Hot deals</div>
-          <div id="pulse-hot" class="pulse-content"></div>
-        </div>
-        <div class="pulse-block">
-          <div class="pulse-title">Drop-off rate</div>
-          <div id="pulse-dropoff" class="pulse-content"></div>
-        </div>
-      </div>
-    </section>
+      </section>
+    </div>
   </main>
   <section id="command-panel" class="panel command-panel hidden">
     <div class="command-head">
@@ -134,7 +135,7 @@
     </div>
     <div class="command-body">
       <div class="command-list" id="command-lead-list"></div>
-      <div class="command-detail" id="command-detail-view"></div>
+      <div class="command-helper">Tap any lead to open the full pipeline tile and scripts.</div>
     </div>
   </section>
   <section id="script-area" class="panel script-panel hidden">
@@ -187,7 +188,7 @@
     </section>
 </div>
 
-<div class="modal-overlay" id="modal">
+  <div class="modal-overlay" id="modal">
   <div class="modal">
     <div class="modal-title">Add New Lead</div>
     <div class="modal-grid">
@@ -247,7 +248,23 @@
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+  <section id="lead-detail-screen" class="lead-detail-screen hidden" aria-hidden="true">
+    <div class="lead-detail-shell" id="lead-detail-shell">
+      <div class="lead-detail-header">
+        <button type="button" class="btn btn-ghost back-btn" onclick="closeLeadDetail()">← Back</button>
+        <div class="lead-detail-title">
+          <div class="section-label">Lead Detail</div>
+          <div class="lead-detail-subtitle" id="lead-detail-subtitle">Pipeline view</div>
+        </div>
+        <button type="button" class="btn btn-icon" onclick="confirmArchive(leadDetailState.leadId)" title="Archive lead">
+          <span aria-hidden="true">🗑️</span>
+        </button>
+      </div>
+      <div class="lead-detail-content" id="lead-detail-content"></div>
+    </div>
+  </section>
+
+  <div class="toast" id="toast"></div>
 
 <script src="app.js"></script>
 <script>

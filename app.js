@@ -92,7 +92,6 @@ const FILTER_STATE = {
 const FOLLOWUP_THRESHOLD = 36 * 60 * 60 * 1000;
 const NEW_LEAD_THRESHOLD = 30 * 60 * 60 * 1000;
 const ACTION_DISPLAY_LIMIT = 3;
-const NEXT_ACTION_LIMIT = 8;
 const MAX_FOCUS_ITEMS = 6;
 const COMMAND_FILTER = { vertical: 'all', stage: 'all', search: '' };
 const PAGE_MAP = {
@@ -100,9 +99,9 @@ const PAGE_MAP = {
   command: 'command-panel',
   script: 'script-area',
 };
-let todayMode = false;
 let currentCommandLeadId = null;
 let activePageKey = 'war';
+let leadDetailState = { visible: false, leadId: null };
 
 const LEAD_SYNC_WEBHOOK = 'https://automation.tharrosai.com/webhook/bc225c06-6ba3-49e7-9169-d5c49729591b';
 const FETCH_LEADS_WEBHOOK = 'https://automation.tharrosai.com/webhook/127e7f4a-dd40-4f7c-b995-05efb0977b9a';
@@ -478,11 +477,14 @@ function updateHeaderStats() {
 function renderWarRoom() {
   updateHeaderStats();
   renderFocusQueue();
+  renderStageSummary();
   const prioritized = getPrioritizedLeads();
-  renderActionEngine(prioritized);
   renderPipelinePulse();
   renderNextActionsList(prioritized);
-  renderCommandSection(prioritized);
+  renderCommandSection();
+  if (leadDetailState.visible) {
+    renderLeadDetail();
+  }
 }
 
 function renderFocusQueue() {
@@ -536,7 +538,7 @@ function buildFocusList(items) {
     const lastTouch = fmtTime(lead.lastMessageAt || lead.createdAt);
     const stageLabel = STAGES[lead.stage]?.short || '';
     return `
-      <button type="button" class="focus-item ${isActive ? 'active' : ''}" onclick="selectLead('${lead.id}')">
+      <button type="button" class="focus-item ${isActive ? 'active' : ''}" onclick="openLeadDetail('${lead.id}')">
         <div class="focus-item-title">${escHTML(lead.name)}</div>
         <div class="focus-meta">
           <span>${stageLabel} · ${lastTouch}</span>
@@ -545,6 +547,35 @@ function buildFocusList(items) {
       </button>
     `;
   }).join('');
+}
+
+function renderStageSummary() {
+  const container = document.getElementById('stage-summary');
+  if (!container) return;
+  const visible = getVisibleLeads();
+  const activeStage = leads.find(lead => lead.id === currentLeadId)?.stage;
+  const cards = STAGES.slice(0, -1).map((stage, idx) => {
+    const count = visible.filter(lead => lead.stage === idx).length;
+    const active = activeStage === idx ? 'active' : '';
+    return `
+      <button type="button" class="stage-card ${active}" onclick="handleStageCardClick(${idx})">
+        <div class="stage-card-label">${escHTML(stage.short)}</div>
+        <div class="stage-card-count">${count}</div>
+        <div class="stage-card-meta">
+          <span>${escHTML(stage.name)}</span>
+          <span>${count} ${count === 1 ? 'lead' : 'leads'}</span>
+        </div>
+      </button>
+    `;
+  }).join('');
+  container.innerHTML = cards;
+}
+
+function handleStageCardClick(stageIndex) {
+  COMMAND_FILTER.stage = String(stageIndex);
+  COMMAND_FILTER.vertical = 'all';
+  COMMAND_FILTER.search = '';
+  switchPage('command');
 }
 
 function getPrioritizedLeads() {
@@ -558,63 +589,9 @@ function getPrioritizedLeads() {
     const bTime = (b.lastMessageAt || b.createdAt) || 0;
     return bTime - aTime;
   });
-  if (todayMode) {
-    const urgentOnly = sorted.filter(isActionDue);
-    return urgentOnly.length ? urgentOnly : sorted;
-  }
   return sorted;
 }
 
-function ensureCurrentLead(prioritized) {
-  if (!prioritized.length) {
-    currentLeadId = null;
-    return;
-  }
-  const exists = leads.some(lead => lead.id === currentLeadId && lead.stage < ARCHIVE_STAGE);
-  if (!currentLeadId || !exists) {
-    currentLeadId = prioritized[0].id;
-  }
-}
-
-function renderActionEngine(prioritized) {
-  const container = document.getElementById('action-cards');
-  if (!container) return;
-  ensureCurrentLead(prioritized);
-  if (!prioritized.length) {
-    container.innerHTML = '<div class="action-card empty">No prioritized leads right now.</div>';
-    return;
-  }
-  const cards = prioritized.slice(0, ACTION_DISPLAY_LIMIT).map(lead => buildActionCard(lead)).join('');
-  container.innerHTML = cards;
-}
-
-function buildActionCard(lead) {
-  const next = getNextAction(lead);
-  const preview = next?.definition?.content ? next.definition.content.slice(0, 220) : 'Script not available for this combination.';
-  const actionLabel = next?.definition ? `${next.definition.stepLabel} · ${next.definition.channel || 'Channel'}` : 'Waiting on response';
-  const disabled = next && next.assetId ? '' : 'disabled';
-  const stageName = STAGES[lead.stage]?.name || 'Stage';
-  const cardClass = lead.id === currentLeadId ? 'active' : '';
-  const markDoneButton = lead.stage < ARCHIVE_STAGE - 1 ? `<button class="btn btn-ghost" onclick="event.stopPropagation(); moveToStage(${Math.min(lead.stage + 1, ARCHIVE_STAGE - 1)})">Mark Done</button>` : '';
-  return `
-    <div class="action-card ${cardClass}" onclick="selectLead('${lead.id}')">
-      <div class="action-card-header">
-        <div>
-          <div class="action-card-title">${escHTML(lead.name)}</div>
-          <div class="action-card-stage">${stageName}</div>
-        </div>
-        <span class="focus-stage-tag">${STAGES[lead.stage]?.short || ''}</span>
-      </div>
-      <div class="action-card-meta">${actionLabel} · ${fmtTime(lead.lastMessageAt || lead.createdAt)}</div>
-      <div class="action-script">${escHTML(preview)}</div>
-      <div class="action-buttons">
-        <button class="btn btn-primary" ${disabled} ${next && next.assetId ? `onclick="event.stopPropagation(); copyAndMark('${next.assetId}','${lead.id}')"` : ''}>Copy + Send</button>
-        <button class="btn btn-ghost" onclick="event.stopPropagation(); skipWarLead('${lead.id}')">Skip</button>
-        ${markDoneButton}
-      </div>
-    </div>
-  `;
-}
 
 function buildNextStageButtons(lead) {
   const upcoming = STAGES.slice(lead.stage + 1, STAGES.length - 1);
@@ -623,7 +600,7 @@ function buildNextStageButtons(lead) {
   }
   return upcoming.map((stage, idx) => {
     const stageIndex = lead.stage + 1 + idx;
-    return `<button class="btn btn-ghost stage-btn" onclick="moveToStage(${stageIndex})">${escHTML(stage.short)}</button>`;
+    return `<button class="btn btn-ghost stage-btn" onclick="moveToStage(${stageIndex}, '${lead.id}')">${escHTML(stage.short)}</button>`;
   }).join('');
 }
 
@@ -635,26 +612,142 @@ function renderNextActionsList(prioritized = []) {
   const container = document.getElementById('next-actions');
   if (!container) return;
   if (!prioritized.length) {
-    container.innerHTML = '<div class="next-actions-title">Next Actions</div><div class="next-actions-list"><div class="next-action-item">No next steps yet.</div></div>';
+    container.innerHTML = '<div class="next-action-empty">No next actions scheduled.</div>';
     return;
   }
-  const list = prioritized.slice(0, NEXT_ACTION_LIMIT).map(lead => {
-    const next = getNextAction(lead);
-    const label = next?.definition ? `${next.definition.stepLabel} · ${next.definition.stageLabel}` : 'Waiting for reply';
-    return `
-      <div class="next-action-item">
-        <span>${escHTML(lead.name)}</span>
-        <span>${escHTML(label)}</span>
-      </div>
-    `;
-  }).join('');
-  container.innerHTML = `<div class="next-actions-title">Next Actions (${Math.min(prioritized.length, NEXT_ACTION_LIMIT)})</div><div class="next-actions-list">${list}</div>`;
+  const cards = prioritized.slice(0, ACTION_DISPLAY_LIMIT).map(lead => buildNextActionCard(lead)).join('');
+  container.innerHTML = cards;
 }
 
-function renderCommandSection(prioritized = []) {
+function buildNextActionCard(lead) {
+  const next = getNextAction(lead);
+  const nextLabel = next?.definition ? `${next.definition.stepLabel} · ${next.definition.stageLabel}` : 'Awaiting next ping';
+  const preview = next?.definition?.content ? next.definition.content.slice(0, 180) : 'Script not available yet.';
+  const timeLabel = fmtTime(lead.lastMessageAt || lead.createdAt);
+  const stageTag = STAGES[lead.stage]?.short || '';
+  const markDoneButton = lead.stage < ARCHIVE_STAGE - 1 ? `<button class="btn btn-ghost stage-btn" onclick="event.stopPropagation(); moveToStage(${Math.min(lead.stage + 1, ARCHIVE_STAGE - 1)}, '${lead.id}')">Mark Done</button>` : '';
+  const copyDisabled = next?.assetId ? '' : 'disabled';
+  return `
+    <div class="next-action-card" role="button" tabindex="0" onclick="openLeadDetail('${lead.id}')">
+      <div class="next-action-card-header">
+        <div>
+          <div class="next-action-card-title">${escHTML(lead.name)}</div>
+          <div class="next-action-card-meta">${escHTML(nextLabel)} · ${timeLabel}</div>
+        </div>
+        <span class="focus-stage-tag">${stageTag}</span>
+      </div>
+      <p class="next-action-preview">${escHTML(preview)}</p>
+      <div class="next-action-card-actions">
+        <button class="btn btn-primary" ${copyDisabled} ${next?.assetId ? `onclick="event.stopPropagation(); copyAndMark('${next.assetId}','${lead.id}')"` : ''}>Copy + Send</button>
+        <button class="btn btn-ghost" onclick="event.stopPropagation(); skipWarLead('${lead.id}')">Skip</button>
+        ${markDoneButton}
+      </div>
+    </div>
+  `;
+}
+
+function renderCommandSection() {
   renderCommandFilters();
-  renderCommandList(prioritized);
-  renderCommandDetail();
+  renderCommandList();
+}
+
+function openLeadDetail(leadId) {
+  if (!leadId) return;
+  const lead = leads.find(item => item.id === leadId);
+  if (!lead) return;
+  currentLeadId = leadId;
+  currentCommandLeadId = leadId;
+  leadDetailState = { visible: true, leadId };
+  const screen = document.getElementById('lead-detail-screen');
+  if (screen) screen.classList.remove('hidden');
+  document.body.classList.add('detail-open');
+  renderWarRoom();
+}
+
+function closeLeadDetail() {
+  leadDetailState = { visible: false, leadId: null };
+  document.body.classList.remove('detail-open');
+  const screen = document.getElementById('lead-detail-screen');
+  if (screen) screen.classList.add('hidden');
+  switchPage('war');
+}
+
+function renderLeadDetail() {
+  if (!leadDetailState.visible) return;
+  const container = document.getElementById('lead-detail-content');
+  const subtitleEl = document.getElementById('lead-detail-subtitle');
+  if (!container) return;
+  const lead = leads.find(l => l.id === leadDetailState.leadId);
+  if (!lead) {
+    container.innerHTML = '<p class="command-detail-empty">Lead unavailable.</p>';
+    return;
+  }
+  if (subtitleEl) {
+    subtitleEl.textContent = `${lead.verticalLabel} · ${lead.channel || 'Unknown channel'}`;
+  }
+  const stageCount = STAGES.length - 1;
+  const stageIndex = Math.min(lead.stage, Math.max(stageCount - 1, 0));
+  const progress = stageCount > 1 ? Math.round((stageIndex / (stageCount - 1)) * 100) : 0;
+  const timelineSteps = STAGES.slice(0, -1).map((stage, idx) => `
+    <div class="pipeline-step">
+      <span class="pipeline-step-dot ${idx <= stageIndex ? 'complete' : ''}"></span>
+      <span class="pipeline-step-label">${escHTML(stage.short)}</span>
+    </div>
+  `).join('');
+  const next = getNextAction(lead);
+  const preview = next?.definition?.content || 'Script not available yet.';
+  container.innerHTML = `
+    <div class="detail-card-head">
+      <div>
+        <div class="detail-name">${escHTML(lead.name)}</div>
+        <div class="detail-meta">${escHTML(lead.phone || 'No phone')} · ${escHTML(lead.contact || 'Unknown')}</div>
+        <div class="detail-meta">${escHTML(lead.city || 'Unknown city')} · ${escHTML(lead.state || '')}</div>
+      </div>
+      <span class="detail-stage-tag">${STAGES[lead.stage]?.short || 'Stage'}</span>
+    </div>
+    <div class="detail-pipeline">
+      <div class="pipeline-track">
+        <div class="pipeline-progress" style="width:${progress}%"></div>
+      </div>
+      <div class="pipeline-steps">
+        ${timelineSteps}
+      </div>
+    </div>
+    <div class="detail-next">
+      <div class="detail-next-text">
+        <div class="detail-next-label">${next?.definition ? `${escHTML(next.definition.stepLabel)} · ${escHTML(next.definition.channel || '')}` : 'Waiting on next action'}</div>
+        <div class="detail-next-meta">${escHTML(fmtAbsTime(lead.lastMessageAt || lead.createdAt))}</div>
+        <div class="detail-next-preview">${escHTML(preview)}</div>
+      </div>
+      <div class="detail-next-actions">
+        <button class="btn btn-primary" ${next?.assetId ? `onclick="copyAndMark('${next.assetId}','${lead.id}')"` : 'disabled'}>Copy + Send</button>
+        <button class="btn btn-ghost" onclick="skipWarLead('${lead.id}')">Skip</button>
+        ${lead.stage < ARCHIVE_STAGE - 1 ? `<button class="btn btn-ghost" onclick="moveToStage(${Math.min(lead.stage + 1, ARCHIVE_STAGE - 1)}, '${lead.id}')">Mark Done</button>` : ''}
+      </div>
+    </div>
+    <div class="detail-stage-actions">
+      ${buildNextStageButtons(lead)}
+    </div>
+    <div class="detail-notes">
+      <div class="detail-notes-label">Lead Notes</div>
+      <textarea id="lead-detail-notes" rows="4">${escHTML(lead.notes)}</textarea>
+      <div class="notes-actions">
+        <button class="btn btn-outline" onclick="closeLeadDetail()">Close</button>
+        <button class="btn btn-primary" onclick="saveLeadNotes('${lead.id}', this)">Save notes</button>
+      </div>
+    </div>
+    <div class="command-messages">
+      ${renderCommandMessages(lead)}
+    </div>
+  `;
+}
+
+function confirmArchive(leadId) {
+  if (!leadId) return;
+  const message = 'Archive this lead? This action cannot be undone.';
+  if (window.confirm(message)) {
+    archiveLead(leadId);
+  }
 }
 
 function renderCommandFilters() {
@@ -676,10 +769,10 @@ function renderCommandFilters() {
   if (searchInput) searchInput.value = COMMAND_FILTER.search;
 }
 
-function renderCommandList(prioritized) {
+function renderCommandList() {
   const container = document.getElementById('command-lead-list');
   if (!container) return;
-  const items = getCommandLeads(prioritized);
+  const items = getCommandLeads();
   if (!items.length) {
     container.innerHTML = '<div class="command-empty">No leads match the filters.</div>';
     return;
@@ -703,9 +796,9 @@ function renderCommandList(prioritized) {
   }).join('');
 }
 
-function getCommandLeads(prioritized = []) {
+function getCommandLeads() {
   const search = (COMMAND_FILTER.search || '').toLowerCase();
-  return (prioritized.length ? prioritized : leads)
+  return leads
     .filter(lead => lead.stage < ARCHIVE_STAGE)
     .filter(lead => {
       if (COMMAND_FILTER.vertical !== 'all' && lead.verticalId !== COMMAND_FILTER.vertical) return false;
@@ -719,7 +812,7 @@ function getCommandLeads(prioritized = []) {
 function openCommandLead(leadId) {
   if (!leadId) return;
   currentCommandLeadId = leadId;
-  selectLead(leadId);
+  openLeadDetail(leadId);
 }
 
 function handleCommandSearch(event) {
@@ -736,77 +829,6 @@ function resetCommandFilters() {
   renderCommandSection();
 }
 
-function renderCommandDetail() {
-  const container = document.getElementById('command-detail-view');
-  if (!container) return;
-  const leadId = currentCommandLeadId || currentLeadId;
-  const lead = leads.find(l => l.id === leadId && l.stage < ARCHIVE_STAGE);
-  if (!lead) {
-    container.innerHTML = '<div class="command-detail-empty">Select a lead to review the full tile.</div>';
-    return;
-  }
-  const stageCount = STAGES.length - 1;
-  const clampedStage = Math.min(lead.stage, stageCount - 1);
-  const progressPercent = stageCount > 1 ? Math.round((clampedStage / (stageCount - 1)) * 100) : 0;
-  const pipelineSteps = buildPipelineSteps(lead);
-  const next = getNextAction(lead);
-  const previewText = next?.definition?.content || 'Script not available for this stage yet.';
-  const messageSequence = renderCommandMessages(lead);
-  container.innerHTML = `
-    <div class="command-detail-frame">
-      <div class="command-detail-header">
-        <div>
-          <div class="detail-label">Full Lead Tile</div>
-          <div class="detail-name">${escHTML(lead.name)}</div>
-          <div class="detail-meta">${escHTML(lead.phone || 'No phone')} · ${escHTML(lead.contact || 'Unknown')}</div>
-        </div>
-        <div class="detail-stage-tag">${STAGES[lead.stage]?.short || 'Stage'}</div>
-      </div>
-      <div class="detail-pipeline">
-        <div class="pipeline-line">
-          <div class="pipeline-progress" style="width:${progressPercent}%"></div>
-        </div>
-        <div class="pipeline-steps">
-          ${pipelineSteps}
-        </div>
-      </div>
-      <div class="detail-next">
-        <div class="detail-next-text">
-          <div class="detail-next-label">${next?.definition ? `${escHTML(next.definition.stepLabel)} · ${escHTML(next.definition.channel || '')}` : 'Waiting on next action'}</div>
-          <div class="detail-next-meta">${escHTML(fmtAbsTime(lead.lastMessageAt || lead.createdAt))}</div>
-          <div class="detail-next-preview">${escHTML(previewText)}</div>
-        </div>
-        <div class="detail-next-actions">
-          <button class="btn btn-primary" ${next?.assetId ? `onclick="copyAndMark('${next.assetId}','${lead.id}')"` : 'disabled'}>Copy + Send</button>
-          <button class="btn btn-ghost" onclick="skipWarLead('${lead.id}')">Skip</button>
-        </div>
-      </div>
-      <div class="detail-stage-actions">
-        ${buildNextStageButtons(lead)}
-      </div>
-      <div class="command-messages">
-        ${messageSequence}
-      </div>
-    </div>
-  `;
-}
-
-function buildPipelineSteps(lead) {
-  return STAGES.slice(0, -1).map((stage, idx) => {
-    const passed = idx < lead.stage;
-    const current = idx === lead.stage;
-    const stateClasses = ['pipeline-step'];
-    if (passed) stateClasses.push('done');
-    if (current) stateClasses.push('current');
-    const isInteractive = idx > lead.stage;
-    return `
-      <button type="button" class="${stateClasses.join(' ')}" ${isInteractive ? `onclick="moveToStage(${idx})"` : ''} ${idx <= lead.stage ? 'disabled' : ''}>
-        <span class="pipeline-step-circle">${passed ? '✓' : ''}</span>
-        <span class="pipeline-step-label">${escHTML(stage.short)}</span>
-      </button>
-    `;
-  }).join('');
-}
 
 function renderCommandMessages(lead) {
   const assets = getStageAssets(lead);
@@ -869,13 +891,6 @@ function skipWarLead(leadId) {
   }
 }
 
-function toggleTodayMode() {
-  todayMode = !todayMode;
-  const toggle = document.getElementById('today-toggle');
-  if (toggle) toggle.classList.toggle('active', todayMode);
-  renderWarRoom();
-}
-
 function selectLead(id) {
   if (!id) return;
   currentLeadId = id;
@@ -898,6 +913,7 @@ function markSent(leadId, assetId, options = {}) {
   updateLead(lead)
     .then(() => {
       renderWarRoom();
+      if (leadDetailState.visible) renderLeadDetail();
       if (!options.silent) {
         showToast(options.toastMessage || 'Marked as sent');
       }
@@ -908,8 +924,9 @@ function markSent(leadId, assetId, options = {}) {
     });
 }
 
-function moveToStage(stageIdx) {
-  const lead = leads.find(l => l.id === currentLeadId);
+function moveToStage(stageIdx, leadId) {
+  const targetId = leadId || leadDetailState.leadId || currentLeadId;
+  const lead = leads.find(l => l.id === targetId);
   if (!lead || stageIdx <= lead.stage) return;
   lead.stage = stageIdx;
   lead.sentMessages = [];
@@ -919,6 +936,7 @@ function moveToStage(stageIdx) {
   updateLead(lead)
     .then(() => {
       renderWarRoom();
+      if (leadDetailState.visible) renderLeadDetail();
       showToast(`Moved to ${STAGES[stageIdx].name}`);
     })
     .catch(err => {
@@ -963,8 +981,15 @@ function archiveLead(id) {
   lead.stage = ARCHIVE_STAGE;
   if (!lead.history) lead.history = [];
   lead.history.push({ code: 'ARCH', label: 'Lead archived', ts: now() });
+  renderWarRoom();
   updateLead(lead)
     .then(() => {
+      renderWarRoom();
+      if (leadDetailState.leadId === id) {
+        closeLeadDetail();
+      } else if (leadDetailState.visible) {
+        renderLeadDetail();
+      }
       showToast('Lead archived');
     })
     .catch(err => {
@@ -975,7 +1000,7 @@ function archiveLead(id) {
 }
 
 function saveLeadNotes(id, btn) {
-  const textarea = document.getElementById('lead-notes-input');
+  const textarea = document.getElementById('lead-detail-notes');
   if (!textarea) return;
   const lead = leads.find(l => l.id === id);
   if (!lead) return;
@@ -1062,6 +1087,7 @@ function addLead() {
   };
   queuePendingLead(tempLead);
   insertTemporaryLead(tempLead);
+  openLeadDetail(tempLead.id);
   pendingLeadSelection = { name, phone, timestamp: Date.now() };
   const payload = {
     Vertical: tempLead.verticalLabel,
@@ -1336,7 +1362,15 @@ if (modal) {
     if (e.target === this) closeModal();
   });
 }
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (leadDetailState.visible) {
+      closeLeadDetail();
+    } else {
+      closeModal();
+    }
+  }
+});
 const contactInput = document.getElementById('inp-contact');
 if (contactInput) contactInput.addEventListener('keydown', e => { if (e.key === 'Enter') addLead(); });
 const productSelect = document.getElementById('inp-product');
